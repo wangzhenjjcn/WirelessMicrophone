@@ -1,0 +1,38 @@
+我有一个Seeed Studio XIAO ESP32S3 Sense开发板，他的介绍在https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/可以看到，processor是ESP32-S3R8
+Xtensa LX7 dual-core, 32-bit processor that operates at up to 240 MHz，无线是Complete 2.4GHz Wi-Fi subsystem
+BLE: Bluetooth 5.0, Bluetooth mesh，内建Digital microphone，内存是On-chip 8M PSRAM & 8MB Flash
+Onboard SD Card Slot, 当前fat32的8G卡，我现在要通过WiFi或者串口读取音频数据分析
+使用qt6构建UI，示波器格式显示声音频谱，计算实时的声压级、appUI上用户只要选择com口，点击连接即可实时读取设备数据开始计算。
+需要计算RMS、频谱峰值、谐波特征、MFCC、响度/尖锐度
+
+ESP32 S3上的代码如下：
+#include <ESP_I2S.h>
+I2SClass I2S;
+
+void setup() {
+  // Open serial communications and wait for port to open:
+  // A baud rate of 115200 is used instead of 9600 for a faster data rate
+  // on non-native USB ports
+  Serial.begin(115200);
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
+
+  // setup 42 PDM clock and 41 PDM data pins
+  I2S.setPinsPdmRx(42, 41);
+
+  // start I2S at 16 kHz with 16-bits per sample
+  if (!I2S.begin(I2S_MODE_PDM_RX, 16000, I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO)) {
+    Serial.println("Failed to initialize I2S!");
+    while (1); // do nothing
+  }
+}
+
+void loop() {
+  // read a sample
+  int sample = I2S.read();
+
+  if (sample && sample != -1 && sample != 1) {
+    Serial.println(sample);
+  }
+}
